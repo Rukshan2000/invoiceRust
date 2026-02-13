@@ -6,12 +6,29 @@ mod pdf;
 use tauri::Manager;
 use db::AppDb;
 use std::path::PathBuf;
+use std::sync::Mutex;
+use serde::{Serialize, Deserialize};
+
+#[derive(Default, Serialize, Deserialize, Clone)]
+pub struct SessionUser {
+    pub id: i64,
+    pub username: String,
+    pub role: String,
+    pub permissions: Vec<String>,
+}
+
+pub struct AuthState {
+    pub user: Mutex<Option<SessionUser>>,
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
+        .manage(AuthState {
+            user: Mutex::new(None),
+        })
         .setup(|app| {
             // Store DB in app data dir
             let app_dir: PathBuf = app
@@ -45,6 +62,31 @@ pub fn run() {
             commands::get_settings,
             commands::update_settings,
             commands::export_invoice_pdf,
+            commands::check_auth_initialized,
+            commands::register,
+            commands::login,
+            commands::logout,
+            commands::get_current_session,
+            commands::get_users,
+            commands::get_user_permissions,
+            commands::update_user_permissions,
+            commands::get_audit_logs,
+            commands::upload_logo,
+            commands::get_categories,
+            commands::create_category,
+            commands::delete_category,
+            commands::get_accounts,
+            commands::create_account,
+            commands::get_transactions,
+            commands::create_transaction,
+            commands::get_employees,
+            commands::create_employee,
+            commands::create_payroll,
+            commands::get_payroll_summary,
+            commands::get_cash_flow_report,
+            commands::get_category_report,
+            commands::export_data_csv,
+            commands::export_data_xlsx,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

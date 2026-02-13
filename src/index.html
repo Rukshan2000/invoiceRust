@@ -3,20 +3,40 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Antigravity Billing Manager</title>
+  <title>NyxoWealth Billing Manager</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <div class="app-layout">
+  <div data-tauri-drag-region class="titlebar">
+    <div class="titlebar-icon">◈</div>
+    <div class="titlebar-text">NyxoWealth</div>
+    <div class="titlebar-controls">
+      <div class="titlebar-button" id="titlebar-minimize">
+        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="1" viewBox="0 0 10 1"><path d="M0 0h10v1H0z"/></svg>
+      </div>
+      <div class="titlebar-button" id="titlebar-maximize">
+        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 10 10"><path d="M1 1h8v8H1V1zm1 1v6h6V2H2z"/></svg>
+      </div>
+      <div class="titlebar-button titlebar-close" id="titlebar-close">
+        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 10 10"><path d="M1.4 0L0 1.4 3.6 5 0 8.6 1.4 10 5 6.4 8.6 10 10 8.6 6.4 5 10 1.4 8.6 0 5 3.6z"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <div class="auth-container" id="auth-container">
+    <!-- Auth forms will be rendered here -->
+  </div>
+
+  <div class="app-layout" id="app-layout" style="display: none;">
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-header">
         <div class="logo">
           <span class="logo-icon">◈</span>
-          <span class="logo-text">Antigravity</span>
+          <span class="logo-text">NyxoWealth</span>
         </div>
         <span class="logo-sub">Billing Manager</span>
       </div>
@@ -24,23 +44,40 @@
         <a href="#dashboard" class="nav-item active" data-page="dashboard">
           <span class="nav-icon">⊞</span><span>Dashboard</span>
         </a>
-        <a href="#customers" class="nav-item" data-page="customers">
+        <a href="#transactions" class="nav-item" data-page="transactions" data-perm="manage_transactions">
+          <span class="nav-icon">⇄</span><span>Transactions</span>
+        </a>
+        <a href="#payroll" class="nav-item" data-page="payroll" data-perm="manage_payroll">
+          <span class="nav-icon">☖</span><span>Payroll</span>
+        </a>
+        <a href="#customers" class="nav-item" data-page="customers" data-perm="manage_customers">
           <span class="nav-icon">⊛</span><span>Customers</span>
         </a>
-        <a href="#products" class="nav-item" data-page="products">
+        <a href="#products" class="nav-item" data-page="products" data-perm="manage_products">
           <span class="nav-icon">⊡</span><span>Products</span>
         </a>
-        <a href="#create-invoice" class="nav-item" data-page="create-invoice">
-          <span class="nav-icon">⊕</span><span>Create Invoice</span>
-        </a>
         <a href="#invoices" class="nav-item" data-page="invoices">
-          <span class="nav-icon">⊟</span><span>Invoice History</span>
+          <span class="nav-icon">⊟</span><span>Invoices</span>
         </a>
-        <a href="#settings" class="nav-item" data-page="settings">
+        <a href="#reports" class="nav-item" data-page="reports" data-perm="view_reports">
+          <span class="nav-icon">📈</span><span>Reports</span>
+        </a>
+        <a href="#settings" class="nav-item" data-page="settings" data-perm="manage_settings">
           <span class="nav-icon">⊙</span><span>Settings</span>
+        </a>
+        <a href="#users" class="nav-item admin-only" data-page="users" id="nav-users" style="display: none;" data-perm="manage_users">
+          <span class="nav-icon">☊</span><span>Users</span>
+        </a>
+        <a href="#logs" class="nav-item admin-only" data-page="logs" id="nav-logs" style="display: none;" data-perm="view_logs">
+          <span class="nav-icon">≣</span><span>Activity Logs</span>
         </a>
       </nav>
       <div class="sidebar-footer">
+        <div class="logout-container">
+          <button class="btn btn-secondary btn-sm btn-logout" onclick="handleLogout()">
+            <span>⎗</span><span>Logout</span>
+          </button>
+        </div>
         <span class="version">v0.1.0</span>
       </div>
     </aside>
