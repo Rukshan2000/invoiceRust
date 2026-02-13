@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Antigravity Billing Manager</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">
+          <span class="logo-icon">◈</span>
+          <span class="logo-text">Antigravity</span>
+        </div>
+        <span class="logo-sub">Billing Manager</span>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="#dashboard" class="nav-item active" data-page="dashboard">
+          <span class="nav-icon">⊞</span><span>Dashboard</span>
+        </a>
+        <a href="#customers" class="nav-item" data-page="customers">
+          <span class="nav-icon">⊛</span><span>Customers</span>
+        </a>
+        <a href="#products" class="nav-item" data-page="products">
+          <span class="nav-icon">⊡</span><span>Products</span>
+        </a>
+        <a href="#create-invoice" class="nav-item" data-page="create-invoice">
+          <span class="nav-icon">⊕</span><span>Create Invoice</span>
+        </a>
+        <a href="#invoices" class="nav-item" data-page="invoices">
+          <span class="nav-icon">⊟</span><span>Invoice History</span>
+        </a>
+        <a href="#settings" class="nav-item" data-page="settings">
+          <span class="nav-icon">⊙</span><span>Settings</span>
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <span class="version">v0.1.0</span>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content" id="main-content">
+      <!-- Pages will be rendered here by main.js -->
+    </main>
+  </div>
+
+  <!-- Modal overlay -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal" id="modal">
+      <div class="modal-header">
+        <h3 id="modal-title">Modal</h3>
+        <button class="modal-close" id="modal-close">&times;</button>
+      </div>
+      <div class="modal-body" id="modal-body"></div>
+    </div>
+  </div>
+
+  <!-- Toast container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="main.js" type="module"></script>
+</body>
+</html>
