@@ -39,7 +39,7 @@ pub fn create_customer(
     address: Option<String>,
     tax_id: Option<String>,
 ) -> Result<i64, String> {
-    check_permission(&auth, "manage_customers")?;
+    check_permission(&auth, "create_customers")?;
     
     let c = Customer {
         id: None,
@@ -76,7 +76,7 @@ pub fn update_customer(
     address: Option<String>,
     tax_id: Option<String>,
 ) -> Result<(), String> {
-    check_permission(&auth, "manage_customers")?;
+    check_permission(&auth, "edit_customers")?;
     let c = Customer {
         id: Some(id),
         name: name.clone(),
@@ -163,7 +163,7 @@ pub fn update_product(
     unit_price: f64,
     tax_percent: f64,
 ) -> Result<(), String> {
-    check_permission(&auth, "manage_products")?;
+    check_permission(&auth, "edit_products")?;
     let p = Product {
         id: Some(id),
         name: name.clone(),
@@ -186,7 +186,7 @@ pub fn update_product(
 
 #[tauri::command]
 pub fn delete_product(db: State<'_, AppDb>, auth: State<'_, AuthState>, id: i64) -> Result<(), String> {
-    check_permission(&auth, "manage_products")?;
+    check_permission(&auth, "delete_products")?;
     db.delete_product(id).map_err(|e| e.to_string())?;
     
     db.log_activity(
@@ -222,6 +222,8 @@ pub fn create_invoice(
     due_date: String,
     notes: Option<String>,
     discount: f64,
+    discount_percent: f64,
+    advance: f64,
     items: Vec<InvoiceItem>,
 ) -> Result<i64, String> {
     check_permission(&auth, "create_invoice")?;
@@ -230,6 +232,7 @@ pub fn create_invoice(
         invoice_number: None,
         customer_id,
         customer_name: None,
+        customer_phone: None,
         status,
         issue_date,
         due_date,
@@ -237,6 +240,8 @@ pub fn create_invoice(
         subtotal: 0.0,
         tax: 0.0,
         discount,
+        discount_percent,
+        advance,
         total: 0.0,
         created_at: None,
         items: None,
@@ -261,7 +266,7 @@ pub fn update_invoice_status(
     id: i64,
     status: String,
 ) -> Result<(), String> {
-    check_permission(&auth, "create_invoice")?; // Re-using create_invoice for edit perm
+    check_permission(&auth, "edit_invoices")?; // Edit invoice permission
     db.update_invoice_status(id, &status)
         .map_err(|e| e.to_string())?;
     
@@ -278,7 +283,7 @@ pub fn update_invoice_status(
 
 #[tauri::command]
 pub fn delete_invoice(db: State<'_, AppDb>, auth: State<'_, AuthState>, id: i64) -> Result<(), String> {
-    check_permission(&auth, "delete_invoice")?;
+    check_permission(&auth, "delete_invoices")?;
     db.delete_invoice(id).map_err(|e| e.to_string())?;
     
     db.log_activity(
@@ -319,6 +324,13 @@ pub fn update_settings(
     logo_path: Option<String>,
     default_footer: Option<String>,
     template_type: String,
+    signature_path: Option<String>,
+    bank_name: Option<String>,
+    bank_account_name: Option<String>,
+    bank_account_no: Option<String>,
+    bank_branch: Option<String>,
+    business_tagline: Option<String>,
+    qr_code_path: Option<String>,
 ) -> Result<(), String> {
     check_permission(&auth, "manage_settings")?;
     let s = Settings {
@@ -331,6 +343,13 @@ pub fn update_settings(
         logo_path,
         default_footer,
         template_type,
+        signature_path,
+        bank_name,
+        bank_account_name,
+        bank_account_no,
+        bank_branch,
+        business_tagline,
+        qr_code_path,
     };
     db.update_settings(&s).map_err(|e| e.to_string())?;
     
@@ -355,7 +374,15 @@ pub fn export_invoice_pdf(
 ) -> Result<String, String> {
     let invoice = db.get_invoice_detail(invoice_id).map_err(|e| e.to_string())?;
     let settings = db.get_settings().map_err(|e| e.to_string())?;
-    crate::pdf::generate_invoice_pdf(&invoice, &settings, &file_path)
+    
+    // Check if using a custom template
+    let custom_template = if settings.template_type.starts_with("Custom-") {
+        if let Ok(id) = settings.template_type.replace("Custom-", "").parse::<i64>() {
+            db.get_custom_template(id).ok()
+        } else { None }
+    } else { None };
+    
+    crate::pdf::generate_invoice_pdf(&invoice, &settings, &file_path, custom_template.as_ref())
 }
 
 // ── Authentication ──────────────────────────────────────
@@ -509,7 +536,7 @@ pub fn get_audit_logs(
     date: Option<String>,
     month: Option<String>,
 ) -> Result<Vec<AuditLog>, String> {
-    check_permission(&auth, "view_logs")?;
+    check_permission(&auth, "view_activity_logs")?;
     db.get_audit_logs(limit, offset, module, user_id, date, month).map_err(|e| e.to_string())
 }
 #[tauri::command]
@@ -530,6 +557,54 @@ pub fn upload_logo(
         .unwrap_or("png");
         
     let target_path = branding_dir.join(format!("logo.{}", extension));
+    
+    std::fs::copy(&source_path, &target_path).map_err(|e| e.to_string())?;
+    
+    Ok(target_path.to_str().unwrap().to_string())
+}
+
+#[tauri::command]
+pub fn upload_signature(
+    app: tauri::AppHandle,
+    auth: State<'_, AuthState>,
+    source_path: String,
+) -> Result<String, String> {
+    check_permission(&auth, "manage_settings")?;
+    
+    let app_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    let branding_dir = app_dir.join("branding");
+    std::fs::create_dir_all(&branding_dir).map_err(|e| e.to_string())?;
+    
+    let extension = std::path::Path::new(&source_path)
+        .extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or("png");
+        
+    let target_path = branding_dir.join(format!("signature.{}", extension));
+    
+    std::fs::copy(&source_path, &target_path).map_err(|e| e.to_string())?;
+    
+    Ok(target_path.to_str().unwrap().to_string())
+}
+
+#[tauri::command]
+pub fn upload_qr_code(
+    app: tauri::AppHandle,
+    auth: State<'_, AuthState>,
+    source_path: String,
+) -> Result<String, String> {
+    check_permission(&auth, "manage_settings")?;
+    
+    let app_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    let branding_dir = app_dir.join("branding");
+    std::fs::create_dir_all(&branding_dir).map_err(|e| e.to_string())?;
+    
+    let extension = std::path::Path::new(&source_path)
+        .extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or("png");
+        
+    let target_path = branding_dir.join(format!("qrcode.{}", extension));
     
     std::fs::copy(&source_path, &target_path).map_err(|e| e.to_string())?;
     
@@ -621,7 +696,7 @@ pub fn create_transaction(
     date: String,
     reference_id: Option<String>,
 ) -> Result<i64, String> {
-    check_permission(&auth, "manage_transactions")?;
+    check_permission(&auth, "create_transactions")?;
     let t = Transaction {
         id: None,
         account_id,
@@ -662,9 +737,14 @@ pub fn create_employee(
     email: Option<String>,
     phone: Option<String>,
     salary: f64,
+    allowances: Option<f64>,
 ) -> Result<i64, String> {
     check_permission(&auth, "manage_payroll")?;
-    let e = Employee { id: None, name: name.clone(), role, email, phone, salary, created_at: None };
+    let e = Employee {
+        id: None, name: name.clone(), role, email, phone, salary,
+        allowances: allowances.unwrap_or(0.0),
+        created_at: None,
+    };
     let id = db.create_employee(&e).map_err(|e| e.to_string())?;
     
     db.log_activity(
@@ -679,17 +759,78 @@ pub fn create_employee(
 }
 
 #[tauri::command]
+pub fn update_employee(
+    db: State<'_, AppDb>,
+    auth: State<'_, AuthState>,
+    id: i64,
+    name: String,
+    role: Option<String>,
+    email: Option<String>,
+    phone: Option<String>,
+    salary: f64,
+    allowances: Option<f64>,
+) -> Result<(), String> {
+    check_permission(&auth, "manage_payroll")?;
+    let e = Employee {
+        id: Some(id),
+        name: name.clone(),
+        role,
+        email,
+        phone,
+        salary,
+        allowances: allowances.unwrap_or(0.0),
+        created_at: None,
+    };
+    db.update_employee(&e).map_err(|e| e.to_string())?;
+    
+    db.log_activity(
+        get_current_user_id(&auth),
+        "UPDATE",
+        "Employee",
+        Some(&id.to_string()),
+        &format!("Updated employee: {}", name)
+    ).ok();
+
+    Ok(())
+}
+
+#[tauri::command]
 pub fn create_payroll(
     db: State<'_, AppDb>,
     auth: State<'_, AuthState>,
     employee_id: i64,
-    amount: f64,
+    base_salary: f64,
+    bonuses: f64,
+    pay_period_start: String,
+    pay_period_end: String,
     payment_date: String,
     status: String,
     notes: Option<String>,
 ) -> Result<i64, String> {
     check_permission(&auth, "manage_payroll")?;
-    let p = PayrollRecord { id: None, employee_id, amount, payment_date, status, notes };
+    let net_pay = base_salary + bonuses;
+    let p = PayrollRecord {
+        id: None,
+        employee_id,
+        employee_name: None,
+        employee_role: None,
+        base_salary,
+        overtime_pay: 0.0,
+        bonuses,
+        allowances: 0.0,
+        gross_salary: net_pay,
+        tax: 0.0,
+        late_penalties: 0.0,
+        absences: 0.0,
+        other_deductions: 0.0,
+        total_deductions: 0.0,
+        net_pay,
+        pay_period_start,
+        pay_period_end,
+        payment_date,
+        status,
+        notes,
+    };
     let id = db.create_payroll(&p).map_err(|e| e.to_string())?;
     
     db.log_activity(
@@ -704,8 +845,79 @@ pub fn create_payroll(
 }
 
 #[tauri::command]
+pub fn create_bulk_payroll(
+    db: State<'_, AppDb>,
+    auth: State<'_, AuthState>,
+    pay_period_start: String,
+    pay_period_end: String,
+    payment_date: String,
+    bonuses: f64,
+) -> Result<i64, String> {
+    check_permission(&auth, "manage_payroll")?;
+    let employees = db.get_employees().map_err(|e| e.to_string())?;
+    if employees.is_empty() {
+        return Err("No employees found".to_string());
+    }
+    let mut count: i64 = 0;
+    for emp in &employees {
+        let base = emp.salary;
+        let net_pay = base + bonuses;
+        let p = PayrollRecord {
+            id: None,
+            employee_id: emp.id.unwrap_or(0),
+            employee_name: None,
+            employee_role: None,
+            base_salary: base,
+            overtime_pay: 0.0,
+            bonuses,
+            allowances: 0.0,
+            gross_salary: net_pay,
+            tax: 0.0,
+            late_penalties: 0.0,
+            absences: 0.0,
+            other_deductions: 0.0,
+            total_deductions: 0.0,
+            net_pay,
+            pay_period_start: pay_period_start.clone(),
+            pay_period_end: pay_period_end.clone(),
+            payment_date: payment_date.clone(),
+            status: "Paid".to_string(),
+            notes: None,
+        };
+        db.create_payroll(&p).map_err(|e| e.to_string())?;
+        count += 1;
+    }
+
+    db.log_activity(
+        get_current_user_id(&auth),
+        "CREATE",
+        "Payroll",
+        None,
+        &format!("Bulk payroll processed for {} employees", count)
+    ).ok();
+
+    Ok(count)
+}
+
+#[tauri::command]
 pub fn get_payroll_summary(db: State<'_, AppDb>) -> Result<Vec<PayrollRecord>, String> {
     db.get_payroll_summary().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn get_payroll_detail(db: State<'_, AppDb>, id: i64) -> Result<PayrollRecord, String> {
+    db.get_payroll_detail(id).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn export_payslip_pdf(
+    db: State<'_, AppDb>,
+    payroll_id: i64,
+    file_path: String,
+) -> Result<String, String> {
+    let payroll = db.get_payroll_detail(payroll_id).map_err(|e| e.to_string())?;
+    let settings = db.get_settings().map_err(|e| e.to_string())?;
+    crate::pdf::generate_payslip_pdf(&payroll, &settings, &file_path)
 }
 
 // ── Reports & Export ─────────────────────────────────────
@@ -797,4 +1009,213 @@ pub fn export_data_xlsx(
 
     workbook.save(path).map_err(|e| e.to_string())?;
     Ok(())
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  ACTIVATION / LICENSING COMMANDS
+// ══════════════════════════════════════════════════════════════════
+
+use crate::models::ActivationStatus;
+use serde_json::Value;
+
+const FIREBASE_DB_URL: &str = "https://activation-145ea-default-rtdb.firebaseio.com";
+
+fn get_machine_id() -> Result<String, String> {
+    machine_uid::get()
+        .map_err(|e| format!("Failed to get machine ID: {}", e))
+}
+
+#[tauri::command]
+pub fn check_activation_status(db: State<'_, AppDb>) -> Result<ActivationStatus, String> {
+    let machine_id = get_machine_id()?;
+    
+    // Check local activation first
+    let local_info = db.get_activation_info().map_err(|e| e.to_string())?;
+    
+    if let Some(info) = local_info {
+        // Verify machine ID matches (prevents copying DB to another machine)
+        if info.machine_id == machine_id && info.is_active == 1 {
+            return Ok(ActivationStatus {
+                is_activated: true,
+                activation_key: Some(info.activation_key),
+                machine_id: Some(info.machine_id),
+                activated_at: info.activated_at,
+            });
+        }
+    }
+    
+    Ok(ActivationStatus {
+        is_activated: false,
+        activation_key: None,
+        machine_id: Some(machine_id),
+        activated_at: None,
+    })
+}
+
+#[tauri::command]
+pub async fn activate_with_key(db: State<'_, AppDb>, key: String) -> Result<ActivationStatus, String> {
+    let key = key.trim().to_uppercase();
+    
+    if key.is_empty() {
+        return Err("Activation key cannot be empty".to_string());
+    }
+    
+    let machine_id = get_machine_id()?;
+    
+    // Step 1: Fetch the key from Firebase
+    let url = format!("{}/activation_keys/{}.json", FIREBASE_DB_URL, key);
+    
+    let client = reqwest::Client::new();
+    let response = client
+        .get(&url)
+        .send()
+        .await
+        .map_err(|e| format!("Network error: {}. Please check your internet connection.", e))?;
+    
+    if !response.status().is_success() {
+        return Err(format!("Failed to validate key: HTTP {}", response.status()));
+    }
+    
+    let body: Value = response
+        .json()
+        .await
+        .map_err(|e| format!("Failed to parse response: {}", e))?;
+    
+    // Step 2: Check if key exists
+    if body.is_null() {
+        return Err("Invalid activation key. Please check and try again.".to_string());
+    }
+    
+    // Step 3: Check if key is already used
+    let used = body.get("used")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+    
+    if used {
+        return Err("This activation key has already been used.".to_string());
+    }
+    
+    // Step 4: Mark the key as used in Firebase
+    let update_url = format!("{}/activation_keys/{}.json", FIREBASE_DB_URL, key);
+    let update_body = serde_json::json!({
+        "used": true,
+        "machine_id": machine_id,
+        "activated_at": chrono::Utc::now().to_rfc3339()
+    });
+    
+    let update_response = client
+        .patch(&update_url)
+        .json(&update_body)
+        .send()
+        .await
+        .map_err(|e| format!("Failed to update key status: {}", e))?;
+    
+    if !update_response.status().is_success() {
+        return Err(format!("Failed to finalize activation: HTTP {}", update_response.status()));
+    }
+    
+    // Step 5: Save activation locally
+    db.save_activation(&key, &machine_id)
+        .map_err(|e| format!("Failed to save activation locally: {}", e))?;
+    
+    Ok(ActivationStatus {
+        is_activated: true,
+        activation_key: Some(key),
+        machine_id: Some(machine_id),
+        activated_at: Some(chrono::Utc::now().to_rfc3339()),
+    })
+}
+
+#[tauri::command]
+pub fn verify_offline_activation(db: State<'_, AppDb>) -> Result<bool, String> {
+    let machine_id = get_machine_id()?;
+    db.verify_local_activation(&machine_id)
+        .map_err(|e| e.to_string())
+}
+
+// ── Custom Templates ──────────────────────────────────
+
+#[tauri::command]
+pub fn get_custom_templates(db: State<'_, AppDb>) -> Result<Vec<CustomTemplate>, String> {
+    db.get_custom_templates().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn get_custom_template(db: State<'_, AppDb>, id: i64) -> Result<CustomTemplate, String> {
+    db.get_custom_template(id).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn create_custom_template(
+    db: State<'_, AppDb>,
+    auth: State<'_, AuthState>,
+    name: String,
+    header_bg_color: String,
+    header_text_color: String,
+    accent_color: String,
+    font_family: String,
+    show_logo: bool,
+    show_business_address: bool,
+    show_business_phone: bool,
+    show_business_email: bool,
+    layout_style: String,
+    header_position: String,
+    table_style: String,
+    show_tax_column: bool,
+    show_description_column: bool,
+    footer_text: Option<String>,
+    border_style: String,
+    border_color: String,
+) -> Result<i64, String> {
+    check_permission(&auth, "manage_templates")?;
+    let template = CustomTemplate {
+        id: None,
+        name, header_bg_color, header_text_color, accent_color,
+        font_family, show_logo, show_business_address, show_business_phone,
+        show_business_email, layout_style, header_position, table_style,
+        show_tax_column, show_description_column, footer_text,
+        border_style, border_color, created_at: None,
+    };
+    db.create_custom_template(&template).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn update_custom_template(
+    db: State<'_, AppDb>,
+    auth: State<'_, AuthState>,
+    id: i64,
+    name: String,
+    header_bg_color: String,
+    header_text_color: String,
+    accent_color: String,
+    font_family: String,
+    show_logo: bool,
+    show_business_address: bool,
+    show_business_phone: bool,
+    show_business_email: bool,
+    layout_style: String,
+    header_position: String,
+    table_style: String,
+    show_tax_column: bool,
+    show_description_column: bool,
+    footer_text: Option<String>,
+    border_style: String,
+    border_color: String,
+) -> Result<(), String> {
+    check_permission(&auth, "manage_templates")?;
+    let template = CustomTemplate {
+        id: Some(id),
+        name, header_bg_color, header_text_color, accent_color,
+        font_family, show_logo, show_business_address, show_business_phone,
+        show_business_email, layout_style, header_position, table_style,
+        show_tax_column, show_description_column, footer_text,
+        border_style, border_color, created_at: None,
+    };
+    db.update_custom_template(&template).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn delete_custom_template(db: State<'_, AppDb>, auth: State<'_, AuthState>, id: i64) -> Result<(), String> {
+    check_permission(&auth, "manage_templates")?;
+    db.delete_custom_template(id).map_err(|e| e.to_string())
 }

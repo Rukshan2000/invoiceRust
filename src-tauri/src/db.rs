@@ -52,6 +52,8 @@ impl AppDb {
                 subtotal REAL DEFAULT 0,
                 tax REAL DEFAULT 0,
                 discount REAL DEFAULT 0,
+                discount_percent REAL DEFAULT 0,
+                advance REAL DEFAULT 0,
                 total REAL DEFAULT 0,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY(customer_id) REFERENCES customers(id)
@@ -79,7 +81,14 @@ impl AppDb {
                 tax_label TEXT DEFAULT 'Tax',
                 logo_path TEXT,
                 default_footer TEXT,
-                template_type TEXT DEFAULT 'Basic'
+                template_type TEXT DEFAULT 'Basic',
+                signature_path TEXT,
+                bank_name TEXT,
+                bank_account_name TEXT,
+                bank_account_no TEXT,
+                bank_branch TEXT,
+                business_tagline TEXT,
+                qr_code_path TEXT
             );
 
             CREATE TABLE IF NOT EXISTS users (
@@ -138,13 +147,26 @@ impl AppDb {
                 email TEXT,
                 phone TEXT,
                 salary REAL DEFAULT 0,
+                allowances REAL DEFAULT 0,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             );
 
             CREATE TABLE IF NOT EXISTS payroll (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 employee_id INTEGER NOT NULL,
-                amount REAL NOT NULL,
+                base_salary REAL NOT NULL DEFAULT 0,
+                overtime_pay REAL DEFAULT 0,
+                bonuses REAL DEFAULT 0,
+                allowances REAL DEFAULT 0,
+                gross_salary REAL DEFAULT 0,
+                tax REAL DEFAULT 0,
+                late_penalties REAL DEFAULT 0,
+                absences REAL DEFAULT 0,
+                other_deductions REAL DEFAULT 0,
+                total_deductions REAL DEFAULT 0,
+                net_pay REAL NOT NULL DEFAULT 0,
+                pay_period_start TEXT,
+                pay_period_end TEXT,
                 payment_date TEXT NOT NULL,
                 status TEXT DEFAULT 'Paid',
                 notes TEXT,
@@ -160,6 +182,36 @@ impl AppDb {
                 description TEXT,
                 timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS activation (
+                id INTEGER PRIMARY KEY CHECK (id = 1),
+                activation_key TEXT NOT NULL,
+                machine_id TEXT NOT NULL,
+                activated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                is_active INTEGER DEFAULT 1
+            );
+
+            CREATE TABLE IF NOT EXISTS custom_templates (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                header_bg_color TEXT DEFAULT '#1e40af',
+                header_text_color TEXT DEFAULT '#ffffff',
+                accent_color TEXT DEFAULT '#3b82f6',
+                font_family TEXT DEFAULT 'Segoe UI',
+                show_logo INTEGER DEFAULT 1,
+                show_business_address INTEGER DEFAULT 1,
+                show_business_phone INTEGER DEFAULT 1,
+                show_business_email INTEGER DEFAULT 1,
+                layout_style TEXT DEFAULT 'classic',
+                header_position TEXT DEFAULT 'left',
+                table_style TEXT DEFAULT 'striped',
+                show_tax_column INTEGER DEFAULT 1,
+                show_description_column INTEGER DEFAULT 1,
+                footer_text TEXT,
+                border_style TEXT DEFAULT 'solid',
+                border_color TEXT DEFAULT '#e5e7eb',
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             );
 
             -- Initial permissions
@@ -218,6 +270,69 @@ impl AppDb {
         if !settings_cols.contains(&"template_type".to_string()) {
             conn.execute("ALTER TABLE settings ADD COLUMN template_type TEXT DEFAULT 'Basic'", [])?;
         }
+        if !settings_cols.contains(&"signature_path".to_string()) {
+            conn.execute("ALTER TABLE settings ADD COLUMN signature_path TEXT", [])?;
+        }
+        if !settings_cols.contains(&"bank_name".to_string()) {
+            conn.execute("ALTER TABLE settings ADD COLUMN bank_name TEXT", [])?;
+        }
+        if !settings_cols.contains(&"bank_account_name".to_string()) {
+            conn.execute("ALTER TABLE settings ADD COLUMN bank_account_name TEXT", [])?;
+        }
+        if !settings_cols.contains(&"bank_account_no".to_string()) {
+            conn.execute("ALTER TABLE settings ADD COLUMN bank_account_no TEXT", [])?;
+        }
+        if !settings_cols.contains(&"bank_branch".to_string()) {
+            conn.execute("ALTER TABLE settings ADD COLUMN bank_branch TEXT", [])?;
+        }
+        if !settings_cols.contains(&"business_tagline".to_string()) {
+            conn.execute("ALTER TABLE settings ADD COLUMN business_tagline TEXT", [])?;
+        }
+        if !settings_cols.contains(&"qr_code_path".to_string()) {
+            conn.execute("ALTER TABLE settings ADD COLUMN qr_code_path TEXT", [])?;
+        }
+
+        // Migration for invoice advance and discount_percent columns
+        let invoice_cols: Vec<String> = conn.prepare("PRAGMA table_info('invoices')")?
+            .query_map([], |row| row.get(1))?
+            .collect::<SqlResult<Vec<_>>>()?;
+
+        if !invoice_cols.contains(&"discount_percent".to_string()) {
+            conn.execute("ALTER TABLE invoices ADD COLUMN discount_percent REAL DEFAULT 0", [])?;
+        }
+        if !invoice_cols.contains(&"advance".to_string()) {
+            conn.execute("ALTER TABLE invoices ADD COLUMN advance REAL DEFAULT 0", [])?;
+        }
+
+        // Migration for payroll expanded columns
+        let payroll_cols: Vec<String> = conn.prepare("PRAGMA table_info('payroll')")?
+            .query_map([], |row| row.get(1))?
+            .collect::<SqlResult<Vec<_>>>()?;
+
+        if !payroll_cols.contains(&"base_salary".to_string()) {
+            conn.execute("ALTER TABLE payroll ADD COLUMN base_salary REAL DEFAULT 0", [])?;
+            conn.execute("ALTER TABLE payroll ADD COLUMN overtime_pay REAL DEFAULT 0", [])?;
+            conn.execute("ALTER TABLE payroll ADD COLUMN bonuses REAL DEFAULT 0", [])?;
+            conn.execute("ALTER TABLE payroll ADD COLUMN allowances REAL DEFAULT 0", [])?;
+            conn.execute("ALTER TABLE payroll ADD COLUMN gross_salary REAL DEFAULT 0", [])?;
+            conn.execute("ALTER TABLE payroll ADD COLUMN tax REAL DEFAULT 0", [])?;
+            conn.execute("ALTER TABLE payroll ADD COLUMN late_penalties REAL DEFAULT 0", [])?;
+            conn.execute("ALTER TABLE payroll ADD COLUMN absences REAL DEFAULT 0", [])?;
+            conn.execute("ALTER TABLE payroll ADD COLUMN other_deductions REAL DEFAULT 0", [])?;
+            conn.execute("ALTER TABLE payroll ADD COLUMN total_deductions REAL DEFAULT 0", [])?;
+            conn.execute("ALTER TABLE payroll ADD COLUMN net_pay REAL DEFAULT 0", [])?;
+            conn.execute("ALTER TABLE payroll ADD COLUMN pay_period_start TEXT", [])?;
+            conn.execute("ALTER TABLE payroll ADD COLUMN pay_period_end TEXT", [])?;
+            // Migrate existing records: set base_salary=amount, gross_salary=amount, net_pay=amount
+            conn.execute("UPDATE payroll SET base_salary = amount, gross_salary = amount, net_pay = amount WHERE base_salary = 0 AND amount > 0", [])?;
+        }
+
+        // Migration for employee allowances field
+        let emp_has_allowances: bool = conn.prepare("SELECT allowances FROM employees LIMIT 1")
+            .is_ok();
+        if !emp_has_allowances {
+            conn.execute("ALTER TABLE employees ADD COLUMN allowances REAL DEFAULT 0", [])?;
+        }
 
         // Ensure newly added permissions are assigned to Admins
         conn.execute(
@@ -226,6 +341,32 @@ impl AppDb {
                 WHERE u.role = 'Admin'",
             [],
         )?;
+
+        // Create default admin user if no users exist
+        let user_count: i64 = conn.query_row(
+            "SELECT COUNT(*) FROM users",
+            [],
+            |row| row.get(0),
+        ).unwrap_or(0);
+
+        if user_count == 0 {
+            // Hash password "admin" using bcrypt
+            let password_hash = bcrypt::hash("admin", bcrypt::DEFAULT_COST)
+                .expect("Failed to hash default password");
+            
+            conn.execute(
+                "INSERT INTO users (username, password_hash, role) VALUES ('admin', ?1, 'Admin')",
+                params![password_hash],
+            )?;
+
+            // Grant all permissions to the admin user
+            conn.execute(
+                "INSERT OR IGNORE INTO user_permissions (user_id, permission_id) 
+                    SELECT u.id, p.id FROM users u CROSS JOIN permissions p 
+                    WHERE u.username = 'admin'",
+                [],
+            )?;
+        }
 
         Ok(())
     }
@@ -324,8 +465,9 @@ impl AppDb {
     pub fn get_invoices(&self) -> SqlResult<Vec<Invoice>> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare(
-            "SELECT i.id, i.invoice_number, i.customer_id, c.name, i.status,
-                    i.issue_date, i.due_date, i.notes, i.subtotal, i.tax, i.discount, i.total, i.created_at
+            "SELECT i.id, i.invoice_number, i.customer_id, c.name, c.phone, i.status,
+                    i.issue_date, i.due_date, i.notes, i.subtotal, i.tax, i.discount,
+                    i.discount_percent, i.advance, i.total, i.created_at
              FROM invoices i
              LEFT JOIN customers c ON i.customer_id = c.id
              ORDER BY i.id DESC"
@@ -336,15 +478,18 @@ impl AppDb {
                 invoice_number: row.get(1)?,
                 customer_id: row.get(2)?,
                 customer_name: row.get(3)?,
-                status: row.get(4)?,
-                issue_date: row.get(5)?,
-                due_date: row.get(6)?,
-                notes: row.get(7)?,
-                subtotal: row.get(8)?,
-                tax: row.get(9)?,
-                discount: row.get(10)?,
-                total: row.get(11)?,
-                created_at: row.get(12)?,
+                customer_phone: row.get(4)?,
+                status: row.get(5)?,
+                issue_date: row.get(6)?,
+                due_date: row.get(7)?,
+                notes: row.get(8)?,
+                subtotal: row.get(9)?,
+                tax: row.get(10)?,
+                discount: row.get(11)?,
+                discount_percent: row.get(12)?,
+                advance: row.get(13)?,
+                total: row.get(14)?,
+                created_at: row.get(15)?,
                 items: None,
             })
         })?;
@@ -354,8 +499,9 @@ impl AppDb {
     pub fn get_invoice_detail(&self, id: i64) -> SqlResult<Invoice> {
         let conn = self.conn.lock().unwrap();
         let mut inv = conn.query_row(
-            "SELECT i.id, i.invoice_number, i.customer_id, c.name, i.status,
-                    i.issue_date, i.due_date, i.notes, i.subtotal, i.tax, i.discount, i.total, i.created_at
+            "SELECT i.id, i.invoice_number, i.customer_id, c.name, c.phone, i.status,
+                    i.issue_date, i.due_date, i.notes, i.subtotal, i.tax, i.discount,
+                    i.discount_percent, i.advance, i.total, i.created_at
              FROM invoices i
              LEFT JOIN customers c ON i.customer_id = c.id
              WHERE i.id=?1",
@@ -366,15 +512,18 @@ impl AppDb {
                     invoice_number: row.get(1)?,
                     customer_id: row.get(2)?,
                     customer_name: row.get(3)?,
-                    status: row.get(4)?,
-                    issue_date: row.get(5)?,
-                    due_date: row.get(6)?,
-                    notes: row.get(7)?,
-                    subtotal: row.get(8)?,
-                    tax: row.get(9)?,
-                    discount: row.get(10)?,
-                    total: row.get(11)?,
-                    created_at: row.get(12)?,
+                    customer_phone: row.get(4)?,
+                    status: row.get(5)?,
+                    issue_date: row.get(6)?,
+                    due_date: row.get(7)?,
+                    notes: row.get(8)?,
+                    subtotal: row.get(9)?,
+                    tax: row.get(10)?,
+                    discount: row.get(11)?,
+                    discount_percent: row.get(12)?,
+                    advance: row.get(13)?,
+                    total: row.get(14)?,
+                    created_at: row.get(15)?,
                     items: None,
                 })
             },
@@ -415,11 +564,17 @@ impl AppDb {
             subtotal += base;
             tax_total += base * item.tax_percent / 100.0;
         }
-        let total = subtotal + tax_total - inv.discount;
+        // Apply discount percent then subtract advance
+        let discount_amount = if inv.discount_percent > 0.0 {
+            (subtotal + tax_total) * inv.discount_percent / 100.0
+        } else {
+            inv.discount
+        };
+        let total = subtotal + tax_total - discount_amount - inv.advance;
 
         conn.execute(
-            "INSERT INTO invoices (invoice_number, customer_id, status, issue_date, due_date, notes, subtotal, tax, discount, total)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+            "INSERT INTO invoices (invoice_number, customer_id, status, issue_date, due_date, notes, subtotal, tax, discount, discount_percent, advance, total)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
             params![
                 inv_num,
                 inv.customer_id,
@@ -429,7 +584,9 @@ impl AppDb {
                 inv.notes,
                 subtotal,
                 tax_total,
-                inv.discount,
+                discount_amount,
+                inv.discount_percent,
+                inv.advance,
                 total,
             ],
         )?;
@@ -589,7 +746,7 @@ impl AppDb {
 
     pub fn get_employees(&self) -> SqlResult<Vec<Employee>> {
         let conn = self.conn.lock().unwrap();
-        let mut stmt = conn.prepare("SELECT id, name, role, email, phone, salary, created_at FROM employees ORDER BY name")?;
+        let mut stmt = conn.prepare("SELECT id, name, role, email, phone, salary, allowances, created_at FROM employees ORDER BY name")?;
         let rows = stmt.query_map([], |row| {
             Ok(Employee {
                 id: row.get(0)?,
@@ -598,7 +755,8 @@ impl AppDb {
                 email: row.get(3)?,
                 phone: row.get(4)?,
                 salary: row.get(5)?,
-                created_at: row.get(6)?,
+                allowances: row.get(6)?,
+                created_at: row.get(7)?,
             })
         })?;
         rows.collect()
@@ -607,10 +765,19 @@ impl AppDb {
     pub fn create_employee(&self, e: &Employee) -> SqlResult<i64> {
         let conn = self.conn.lock().unwrap();
         conn.execute(
-            "INSERT INTO employees (name, role, email, phone, salary) VALUES (?1, ?2, ?3, ?4, ?5)",
-            params![e.name, e.role, e.email, e.phone, e.salary],
+            "INSERT INTO employees (name, role, email, phone, salary, allowances) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            params![e.name, e.role, e.email, e.phone, e.salary, e.allowances],
         )?;
         Ok(conn.last_insert_rowid())
+    }
+
+    pub fn update_employee(&self, e: &Employee) -> SqlResult<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "UPDATE employees SET name = ?1, role = ?2, email = ?3, phone = ?4, salary = ?5, allowances = ?6 WHERE id = ?7",
+            params![e.name, e.role, e.email, e.phone, e.salary, e.allowances, e.id],
+        )?;
+        Ok(())
     }
 
     pub fn create_payroll(&self, p: &PayrollRecord) -> SqlResult<i64> {
@@ -618,8 +785,8 @@ impl AppDb {
         let tx = conn_mu.transaction()?;
 
         tx.execute(
-            "INSERT INTO payroll (employee_id, amount, payment_date, status, notes) VALUES (?1, ?2, ?3, ?4, ?5)",
-            params![p.employee_id, p.amount, p.payment_date, p.status, p.notes],
+            "INSERT INTO payroll (employee_id, base_salary, overtime_pay, bonuses, allowances, gross_salary, tax, late_penalties, absences, other_deductions, total_deductions, net_pay, pay_period_start, pay_period_end, payment_date, status, notes) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17)",
+            params![p.employee_id, p.base_salary, p.overtime_pay, p.bonuses, p.allowances, p.gross_salary, p.tax, p.late_penalties, p.absences, p.other_deductions, p.total_deductions, p.net_pay, p.pay_period_start, p.pay_period_end, p.payment_date, p.status, p.notes],
         )?;
         let payroll_id = tx.last_insert_rowid();
 
@@ -634,12 +801,12 @@ impl AppDb {
             tx.execute(
                 "INSERT INTO transactions (account_id, amount, transaction_type, description, date, reference_id)
                  VALUES (1, ?1, 'Expense', ?2, ?3, ?4)",
-                params![p.amount, format!("Salary: {}", employee_name), p.payment_date, format!("PAY-{}", payroll_id)],
+                params![p.net_pay, format!("Salary: {}", employee_name), p.payment_date, format!("PAY-{}", payroll_id)],
             )?;
 
             tx.execute(
                 "UPDATE accounts SET balance = balance - ?1 WHERE id = 1",
-                params![p.amount],
+                params![p.net_pay],
             )?;
         }
 
@@ -649,18 +816,70 @@ impl AppDb {
 
     pub fn get_payroll_summary(&self) -> SqlResult<Vec<PayrollRecord>> {
         let conn = self.conn.lock().unwrap();
-        let mut stmt = conn.prepare("SELECT id, employee_id, amount, payment_date, status, notes FROM payroll ORDER BY payment_date DESC")?;
+        let mut stmt = conn.prepare(
+            "SELECT p.id, p.employee_id, e.name, e.role, p.base_salary, p.overtime_pay, p.bonuses, p.allowances, p.gross_salary, p.tax, p.late_penalties, p.absences, p.other_deductions, p.total_deductions, p.net_pay, p.pay_period_start, p.pay_period_end, p.payment_date, p.status, p.notes
+             FROM payroll p LEFT JOIN employees e ON p.employee_id = e.id
+             ORDER BY p.payment_date DESC"
+        )?;
         let rows = stmt.query_map([], |row| {
             Ok(PayrollRecord {
                 id: row.get(0)?,
                 employee_id: row.get(1)?,
-                amount: row.get(2)?,
-                payment_date: row.get(3)?,
-                status: row.get(4)?,
-                notes: row.get(5)?,
+                employee_name: row.get(2)?,
+                employee_role: row.get(3)?,
+                base_salary: row.get::<_, f64>(4).unwrap_or(0.0),
+                overtime_pay: row.get::<_, f64>(5).unwrap_or(0.0),
+                bonuses: row.get::<_, f64>(6).unwrap_or(0.0),
+                allowances: row.get::<_, f64>(7).unwrap_or(0.0),
+                gross_salary: row.get::<_, f64>(8).unwrap_or(0.0),
+                tax: row.get::<_, f64>(9).unwrap_or(0.0),
+                late_penalties: row.get::<_, f64>(10).unwrap_or(0.0),
+                absences: row.get::<_, f64>(11).unwrap_or(0.0),
+                other_deductions: row.get::<_, f64>(12).unwrap_or(0.0),
+                total_deductions: row.get::<_, f64>(13).unwrap_or(0.0),
+                net_pay: row.get::<_, f64>(14).unwrap_or(0.0),
+                pay_period_start: row.get::<_, String>(15).unwrap_or_default(),
+                pay_period_end: row.get::<_, String>(16).unwrap_or_default(),
+                payment_date: row.get(17)?,
+                status: row.get(18)?,
+                notes: row.get(19)?,
             })
         })?;
         rows.collect()
+    }
+
+    pub fn get_payroll_detail(&self, id: i64) -> SqlResult<PayrollRecord> {
+        let conn = self.conn.lock().unwrap();
+        conn.query_row(
+            "SELECT p.id, p.employee_id, e.name, e.role, p.base_salary, p.overtime_pay, p.bonuses, p.allowances, p.gross_salary, p.tax, p.late_penalties, p.absences, p.other_deductions, p.total_deductions, p.net_pay, p.pay_period_start, p.pay_period_end, p.payment_date, p.status, p.notes
+             FROM payroll p LEFT JOIN employees e ON p.employee_id = e.id
+             WHERE p.id = ?1",
+            params![id],
+            |row| {
+                Ok(PayrollRecord {
+                    id: row.get(0)?,
+                    employee_id: row.get(1)?,
+                    employee_name: row.get(2)?,
+                    employee_role: row.get(3)?,
+                    base_salary: row.get::<_, f64>(4).unwrap_or(0.0),
+                    overtime_pay: row.get::<_, f64>(5).unwrap_or(0.0),
+                    bonuses: row.get::<_, f64>(6).unwrap_or(0.0),
+                    allowances: row.get::<_, f64>(7).unwrap_or(0.0),
+                    gross_salary: row.get::<_, f64>(8).unwrap_or(0.0),
+                    tax: row.get::<_, f64>(9).unwrap_or(0.0),
+                    late_penalties: row.get::<_, f64>(10).unwrap_or(0.0),
+                    absences: row.get::<_, f64>(11).unwrap_or(0.0),
+                    other_deductions: row.get::<_, f64>(12).unwrap_or(0.0),
+                    total_deductions: row.get::<_, f64>(13).unwrap_or(0.0),
+                    net_pay: row.get::<_, f64>(14).unwrap_or(0.0),
+                    pay_period_start: row.get::<_, String>(15).unwrap_or_default(),
+                    pay_period_end: row.get::<_, String>(16).unwrap_or_default(),
+                    payment_date: row.get(17)?,
+                    status: row.get(18)?,
+                    notes: row.get(19)?,
+                })
+            },
+        )
     }
 
     // ── Dashboard (Updated) ────────────────────────────────
@@ -696,8 +915,9 @@ impl AppDb {
         let total_invoices: i64 = conn.query_row("SELECT COUNT(*) FROM invoices", [], |row| row.get(0))?;
 
         let mut stmt = conn.prepare(
-            "SELECT i.id, i.invoice_number, i.customer_id, c.name, i.status,
-                    i.issue_date, i.due_date, i.notes, i.subtotal, i.tax, i.discount, i.total, i.created_at
+            "SELECT i.id, i.invoice_number, i.customer_id, c.name, c.phone, i.status,
+                    i.issue_date, i.due_date, i.notes, i.subtotal, i.tax, i.discount,
+                    i.discount_percent, i.advance, i.total, i.created_at
              FROM invoices i
              LEFT JOIN customers c ON i.customer_id = c.id
              ORDER BY i.id DESC LIMIT 5"
@@ -708,15 +928,18 @@ impl AppDb {
                 invoice_number: row.get(1)?,
                 customer_id: row.get(2)?,
                 customer_name: row.get(3)?,
-                status: row.get(4)?,
-                issue_date: row.get(5)?,
-                due_date: row.get(6)?,
-                notes: row.get(7)?,
-                subtotal: row.get(8)?,
-                tax: row.get(9)?,
-                discount: row.get(10)?,
-                total: row.get(11)?,
-                created_at: row.get(12)?,
+                customer_phone: row.get(4)?,
+                status: row.get(5)?,
+                issue_date: row.get(6)?,
+                due_date: row.get(7)?,
+                notes: row.get(8)?,
+                subtotal: row.get(9)?,
+                tax: row.get(10)?,
+                discount: row.get(11)?,
+                discount_percent: row.get(12)?,
+                advance: row.get(13)?,
+                total: row.get(14)?,
+                created_at: row.get(15)?,
                 items: None,
             })
         })?.collect::<SqlResult<Vec<_>>>()?;
@@ -739,7 +962,9 @@ impl AppDb {
         let conn = self.conn.lock().unwrap();
         conn.query_row(
             "SELECT business_name, business_address, business_phone, business_email, 
-                    currency_symbol, tax_label, logo_path, default_footer, template_type 
+                    currency_symbol, tax_label, logo_path, default_footer, template_type,
+                    signature_path, bank_name, bank_account_name, bank_account_no,
+                    bank_branch, business_tagline, qr_code_path
              FROM settings WHERE id=1",
             [],
             |row| {
@@ -753,6 +978,13 @@ impl AppDb {
                     logo_path: row.get(6)?,
                     default_footer: row.get(7)?,
                     template_type: row.get(8)?,
+                    signature_path: row.get(9)?,
+                    bank_name: row.get(10)?,
+                    bank_account_name: row.get(11)?,
+                    bank_account_no: row.get(12)?,
+                    bank_branch: row.get(13)?,
+                    business_tagline: row.get(14)?,
+                    qr_code_path: row.get(15)?,
                 })
             },
         )
@@ -763,12 +995,18 @@ impl AppDb {
         conn.execute(
             "UPDATE settings SET business_name=?1, business_address=?2, business_phone=?3, 
                                  business_email=?4, currency_symbol=?5, tax_label=?6,
-                                 logo_path=?7, default_footer=?8, template_type=?9 
+                                 logo_path=?7, default_footer=?8, template_type=?9,
+                                 signature_path=?10, bank_name=?11, bank_account_name=?12,
+                                 bank_account_no=?13, bank_branch=?14, business_tagline=?15,
+                                 qr_code_path=?16
              WHERE id=1",
             params![
                 s.business_name, s.business_address, s.business_phone, 
                 s.business_email, s.currency_symbol, s.tax_label,
-                s.logo_path, s.default_footer, s.template_type
+                s.logo_path, s.default_footer, s.template_type,
+                s.signature_path, s.bank_name, s.bank_account_name,
+                s.bank_account_no, s.bank_branch, s.business_tagline,
+                s.qr_code_path
             ],
         )?;
         Ok(())
@@ -970,5 +1208,179 @@ impl AppDb {
             })
         })?;
         rows.collect()
+    }
+
+    // ── Activation Methods ──────────────────────────────────────
+
+    pub fn is_activated(&self) -> SqlResult<bool> {
+        let conn = self.conn.lock().unwrap();
+        let count: i32 = conn.query_row(
+            "SELECT COUNT(*) FROM activation WHERE id = 1 AND is_active = 1",
+            [],
+            |row| row.get(0),
+        )?;
+        Ok(count > 0)
+    }
+
+    pub fn get_activation_info(&self) -> SqlResult<Option<ActivationInfo>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(
+            "SELECT activation_key, machine_id, activated_at, is_active FROM activation WHERE id = 1"
+        )?;
+        
+        let result = stmt.query_row([], |row| {
+            Ok(ActivationInfo {
+                activation_key: row.get(0)?,
+                machine_id: row.get(1)?,
+                activated_at: row.get(2)?,
+                is_active: row.get(3)?,
+            })
+        });
+        
+        match result {
+            Ok(info) => Ok(Some(info)),
+            Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+            Err(e) => Err(e),
+        }
+    }
+
+    pub fn save_activation(&self, key: &str, machine_id: &str) -> SqlResult<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "INSERT OR REPLACE INTO activation (id, activation_key, machine_id, activated_at, is_active)
+             VALUES (1, ?1, ?2, datetime('now'), 1)",
+            params![key, machine_id],
+        )?;
+        Ok(())
+    }
+
+    pub fn verify_local_activation(&self, machine_id: &str) -> SqlResult<bool> {
+        let conn = self.conn.lock().unwrap();
+        let count: i32 = conn.query_row(
+            "SELECT COUNT(*) FROM activation WHERE id = 1 AND machine_id = ?1 AND is_active = 1",
+            params![machine_id],
+            |row| row.get(0),
+        )?;
+        Ok(count > 0)
+    }
+
+    // ── Custom Templates ───────────────────────────────────
+
+    pub fn get_custom_templates(&self) -> SqlResult<Vec<CustomTemplate>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(
+            "SELECT id, name, header_bg_color, header_text_color, accent_color, font_family,
+                    show_logo, show_business_address, show_business_phone, show_business_email,
+                    layout_style, header_position, table_style, show_tax_column,
+                    show_description_column, footer_text, border_style, border_color, created_at
+             FROM custom_templates ORDER BY created_at DESC"
+        )?;
+        let rows = stmt.query_map([], |row| {
+            Ok(CustomTemplate {
+                id: row.get(0)?,
+                name: row.get(1)?,
+                header_bg_color: row.get(2)?,
+                header_text_color: row.get(3)?,
+                accent_color: row.get(4)?,
+                font_family: row.get(5)?,
+                show_logo: row.get::<_, i32>(6)? != 0,
+                show_business_address: row.get::<_, i32>(7)? != 0,
+                show_business_phone: row.get::<_, i32>(8)? != 0,
+                show_business_email: row.get::<_, i32>(9)? != 0,
+                layout_style: row.get(10)?,
+                header_position: row.get(11)?,
+                table_style: row.get(12)?,
+                show_tax_column: row.get::<_, i32>(13)? != 0,
+                show_description_column: row.get::<_, i32>(14)? != 0,
+                footer_text: row.get(15)?,
+                border_style: row.get(16)?,
+                border_color: row.get(17)?,
+                created_at: row.get(18)?,
+            })
+        })?;
+        rows.collect()
+    }
+
+    pub fn get_custom_template(&self, id: i64) -> SqlResult<CustomTemplate> {
+        let conn = self.conn.lock().unwrap();
+        conn.query_row(
+            "SELECT id, name, header_bg_color, header_text_color, accent_color, font_family,
+                    show_logo, show_business_address, show_business_phone, show_business_email,
+                    layout_style, header_position, table_style, show_tax_column,
+                    show_description_column, footer_text, border_style, border_color, created_at
+             FROM custom_templates WHERE id = ?1",
+            params![id],
+            |row| {
+                Ok(CustomTemplate {
+                    id: row.get(0)?,
+                    name: row.get(1)?,
+                    header_bg_color: row.get(2)?,
+                    header_text_color: row.get(3)?,
+                    accent_color: row.get(4)?,
+                    font_family: row.get(5)?,
+                    show_logo: row.get::<_, i32>(6)? != 0,
+                    show_business_address: row.get::<_, i32>(7)? != 0,
+                    show_business_phone: row.get::<_, i32>(8)? != 0,
+                    show_business_email: row.get::<_, i32>(9)? != 0,
+                    layout_style: row.get(10)?,
+                    header_position: row.get(11)?,
+                    table_style: row.get(12)?,
+                    show_tax_column: row.get::<_, i32>(13)? != 0,
+                    show_description_column: row.get::<_, i32>(14)? != 0,
+                    footer_text: row.get(15)?,
+                    border_style: row.get(16)?,
+                    border_color: row.get(17)?,
+                    created_at: row.get(18)?,
+                })
+            },
+        )
+    }
+
+    pub fn create_custom_template(&self, t: &CustomTemplate) -> SqlResult<i64> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "INSERT INTO custom_templates (name, header_bg_color, header_text_color, accent_color,
+                font_family, show_logo, show_business_address, show_business_phone, show_business_email,
+                layout_style, header_position, table_style, show_tax_column, show_description_column,
+                footer_text, border_style, border_color)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17)",
+            params![
+                t.name, t.header_bg_color, t.header_text_color, t.accent_color,
+                t.font_family, t.show_logo as i32, t.show_business_address as i32,
+                t.show_business_phone as i32, t.show_business_email as i32,
+                t.layout_style, t.header_position, t.table_style,
+                t.show_tax_column as i32, t.show_description_column as i32,
+                t.footer_text, t.border_style, t.border_color
+            ],
+        )?;
+        Ok(conn.last_insert_rowid())
+    }
+
+    pub fn update_custom_template(&self, t: &CustomTemplate) -> SqlResult<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "UPDATE custom_templates SET name=?1, header_bg_color=?2, header_text_color=?3,
+                accent_color=?4, font_family=?5, show_logo=?6, show_business_address=?7,
+                show_business_phone=?8, show_business_email=?9, layout_style=?10,
+                header_position=?11, table_style=?12, show_tax_column=?13,
+                show_description_column=?14, footer_text=?15, border_style=?16, border_color=?17
+             WHERE id=?18",
+            params![
+                t.name, t.header_bg_color, t.header_text_color, t.accent_color,
+                t.font_family, t.show_logo as i32, t.show_business_address as i32,
+                t.show_business_phone as i32, t.show_business_email as i32,
+                t.layout_style, t.header_position, t.table_style,
+                t.show_tax_column as i32, t.show_description_column as i32,
+                t.footer_text, t.border_style, t.border_color,
+                t.id
+            ],
+        )?;
+        Ok(())
+    }
+
+    pub fn delete_custom_template(&self, id: i64) -> SqlResult<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute("DELETE FROM custom_templates WHERE id = ?1", params![id])?;
+        Ok(())
     }
 }

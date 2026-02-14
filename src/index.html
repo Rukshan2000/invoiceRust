@@ -41,36 +41,87 @@
         <span class="logo-sub">Billing Manager</span>
       </div>
       <nav class="sidebar-nav">
+        <!-- Dashboard (Standalone) -->
         <a href="#dashboard" class="nav-item active" data-page="dashboard">
-          <span class="nav-icon">⊞</span><span>Dashboard</span>
-        </a>
-        <a href="#transactions" class="nav-item" data-page="transactions" data-perm="manage_transactions">
-          <span class="nav-icon">⇄</span><span>Transactions</span>
-        </a>
-        <a href="#payroll" class="nav-item" data-page="payroll" data-perm="manage_payroll">
-          <span class="nav-icon">☖</span><span>Payroll</span>
-        </a>
-        <a href="#customers" class="nav-item" data-page="customers" data-perm="manage_customers">
-          <span class="nav-icon">⊛</span><span>Customers</span>
-        </a>
-        <a href="#products" class="nav-item" data-page="products" data-perm="manage_products">
-          <span class="nav-icon">⊡</span><span>Products</span>
-        </a>
-        <a href="#invoices" class="nav-item" data-page="invoices">
-          <span class="nav-icon">⊟</span><span>Invoices</span>
-        </a>
-        <a href="#reports" class="nav-item" data-page="reports" data-perm="view_reports">
-          <span class="nav-icon">📈</span><span>Reports</span>
-        </a>
-        <a href="#settings" class="nav-item" data-page="settings" data-perm="manage_settings">
-          <span class="nav-icon">⊙</span><span>Settings</span>
-        </a>
-        <a href="#users" class="nav-item admin-only" data-page="users" id="nav-users" style="display: none;" data-perm="manage_users">
-          <span class="nav-icon">☊</span><span>Users</span>
-        </a>
-        <a href="#logs" class="nav-item admin-only" data-page="logs" id="nav-logs" style="display: none;" data-perm="view_logs">
-          <span class="nav-icon">≣</span><span>Activity Logs</span>
-        </a>
+          <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span><span>Dashboard</span>
+        </a> 
+
+        <!-- Financial Management -->
+        <div class="nav-section">
+          <button class="nav-section-toggle" data-section="financial">
+            <span class="toggle-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
+            <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>
+            <span>Financial</span>
+          </button>
+          <div class="nav-submenu" id="financial-submenu">
+            <a href="#invoices" class="nav-subitem" data-page="invoices" data-perm="view_invoices">
+              <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg></span><span>Invoices</span>
+            </a>
+            <a href="#transactions" class="nav-subitem" data-page="transactions" data-perm="view_transactions">
+              <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/></svg></span><span>Transactions</span>
+            </a>
+            <a href="#reports" class="nav-subitem" data-page="reports" data-perm="view_reports">
+              <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/></svg></span><span>Reports</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Team & Operations -->
+        <div class="nav-section">
+          <button class="nav-section-toggle" data-section="team">
+            <span class="toggle-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
+            <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+            <span>Team & Ops</span>
+          </button>
+          <div class="nav-submenu" id="team-submenu">
+            <a href="#employees" class="nav-subitem" data-page="employees" data-perm="view_employees">
+              <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></span><span>Employees</span>
+            </a>
+            <a href="#payroll" class="nav-subitem" data-page="payroll" data-perm="view_payroll">
+              <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5"/></svg></span><span>Payroll</span>
+            </a>
+            <a href="#customers" class="nav-subitem" data-page="customers" data-perm="view_customers">
+              <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span><span>Customers</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Business Setup -->
+        <div class="nav-section">
+          <button class="nav-section-toggle" data-section="setup">
+            <span class="toggle-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
+            <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
+            <span>Business</span>
+          </button>
+          <div class="nav-submenu" id="setup-submenu">
+            <a href="#products" class="nav-subitem" data-page="products" data-perm="view_products">
+              <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8"/></svg></span><span>Products</span>
+            </a>
+            <a href="#templates" class="nav-subitem" data-page="templates" data-perm="manage_templates">
+              <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18"/><line x1="3" y1="9" x2="21" y2="9"/></svg></span><span>Templates</span>
+            </a>
+            <a href="#settings" class="nav-subitem" data-page="settings" data-perm="manage_settings">
+              <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/></svg></span><span>Settings</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Administration (Admin Only) -->
+        <div class="nav-section admin-only" id="nav-admin" style="display: none;">
+          <button class="nav-section-toggle" data-section="admin">
+            <span class="toggle-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
+            <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+            <span>Admin</span>
+          </button>
+          <div class="nav-submenu" id="admin-submenu">
+            <a href="#users" class="nav-subitem" data-page="users" data-perm="manage_users">
+              <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span>Users</span>
+            </a>
+            <a href="#logs" class="nav-subitem" data-page="logs" data-perm="view_activity_logs">
+              <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span><span>Activity Logs</span>
+            </a>
+          </div>
+        </div>
       </nav>
       <div class="sidebar-footer">
         <div class="logout-container">
@@ -78,7 +129,7 @@
             <span>⎗</span><span>Logout</span>
           </button>
         </div>
-        <span class="version">v0.1.0</span>
+        <span class="version">v0.2.0</span>
       </div>
     </aside>
 
@@ -101,6 +152,288 @@
 
   <!-- Toast container -->
   <div class="toast-container" id="toast-container"></div>
+
+  <!-- First-Time Stepper / Product Tour v2 -->
+  <div class="stepper-overlay" id="stepper-overlay" style="display: none;">
+    <canvas class="stepper-particles" id="stepper-particles"></canvas>
+    <div class="stepper-container">
+
+      <!-- Step 1: Welcome -->
+      <div class="stepper-step active" id="step-1">
+        <div class="stepper-content">
+          <span class="stepper-step-badge">1</span>
+          <div class="stepper-icon"><svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+          <h2>Welcome to NyxoWealth</h2>
+          <p>Your Financial Command Center Awaits</p>
+          <div class="stepper-description">
+            A powerful, elegant platform designed to transform how you manage your business finances. From invoicing to payroll, everything you need is right here.
+          </div>
+          <div class="stepper-preview">
+            <div class="tour-preview-card">
+              <div class="tour-feature-grid">
+                <div class="tour-feature-item indigo"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Easy Invoicing</div>
+                <div class="tour-feature-item emerald"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Smart Analytics</div>
+                <div class="tour-feature-item blue"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Team Friendly</div>
+                <div class="tour-feature-item violet"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Secure & Fast</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2: Invoices -->
+      <div class="stepper-step" id="step-2">
+        <div class="stepper-content">
+          <span class="stepper-step-badge">2</span>
+          <div class="stepper-icon"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
+          <h2>Professional Invoices in Seconds</h2>
+          <p>Create, send, and track payments effortlessly</p>
+          <div class="stepper-description">
+            Generate beautiful invoices with automatic numbering, tax calculations, and instant PDF exports. Track every invoice from draft to paid.
+          </div>
+          <div class="stepper-preview">
+            <div class="tour-preview-card">
+              <div class="tour-invoice-row" style="background: rgba(99, 102, 241, 0.1);">
+                <div class="tour-invoice-header"><strong>Invoice #2024-001</strong><span class="tour-badge tour-badge-paid">PAID</span></div>
+                <div class="tour-invoice-detail">Acme Corporation &rarr; $5,250.00</div>
+              </div>
+              <div class="tour-invoice-row" style="background: rgba(139, 92, 246, 0.1);">
+                <div class="tour-invoice-header"><strong>Invoice #2024-002</strong><span class="tour-badge tour-badge-sent">SENT</span></div>
+                <div class="tour-invoice-detail">Global Solutions &rarr; $3,500.00</div>
+              </div>
+              <div class="tour-invoice-row" style="background: rgba(59, 130, 246, 0.1);">
+                <div class="tour-invoice-header"><strong>Invoice #2024-003</strong><span class="tour-badge tour-badge-draft">DRAFT</span></div>
+                <div class="tour-invoice-detail">Tech Startup &rarr; $2,100.00</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3: Expenses & Transactions -->
+      <div class="stepper-step" id="step-3">
+        <div class="stepper-content">
+          <span class="stepper-step-badge">3</span>
+          <div class="stepper-icon"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></div>
+          <h2>Master Your Cash Flow</h2>
+          <p>Track income and expenses in real-time</p>
+          <div class="stepper-description">
+            Record and categorize all transactions instantly. Watch your financial position update live as you log income and expenses.
+          </div>
+          <div class="stepper-preview">
+            <div class="tour-preview-card">
+              <div class="tour-transaction-row">
+                <div class="tour-transaction-left">
+                  <span class="tour-transaction-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
+                  <span>Customer Payment</span>
+                </div>
+                <span class="tour-amount-positive">+$8,500</span>
+              </div>
+              <div class="tour-transaction-row">
+                <div class="tour-transaction-left">
+                  <span class="tour-transaction-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></span>
+                  <span>Office Supplies</span>
+                </div>
+                <span class="tour-amount-negative">-$250</span>
+              </div>
+              <div class="tour-transaction-row">
+                <div class="tour-transaction-left">
+                  <span class="tour-transaction-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
+                  <span>Monthly Rent</span>
+                </div>
+                <span class="tour-amount-negative">-$2,000</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 4: Payroll & Employees -->
+      <div class="stepper-step" id="step-4">
+        <div class="stepper-content">
+          <span class="stepper-step-badge">4</span>
+          <div class="stepper-icon"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+          <h2>Effortless Payroll Management</h2>
+          <p>Pay your team with confidence</p>
+          <div class="stepper-description">
+            Manage employee records, calculate salaries, track benefits, and generate payroll reports. Keep everything organized automatically.
+          </div>
+          <div class="stepper-preview">
+            <div class="tour-preview-card">
+              <div class="tour-employee-grid">
+                <div class="tour-employee-card" style="background: rgba(99, 102, 241, 0.1);">
+                  <div class="tour-employee-name"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Sarah Johnson</div>
+                  <div class="tour-employee-role">Manager</div>
+                  <div class="tour-employee-salary">$5,600/mo</div>
+                </div>
+                <div class="tour-employee-card" style="background: rgba(16, 185, 129, 0.1);">
+                  <div class="tour-employee-name"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Mike Chen</div>
+                  <div class="tour-employee-role">Developer</div>
+                  <div class="tour-employee-salary">$4,200/mo</div>
+                </div>
+              </div>
+              <div class="tour-total-box" style="background: rgba(139, 92, 246, 0.1);">
+                <div class="tour-stat-label">TOTAL PAYROLL</div>
+                <div class="tour-stat-value accent">$9,800</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 5: Reports & Analytics -->
+      <div class="stepper-step" id="step-5">
+        <div class="stepper-content">
+          <span class="stepper-step-badge">5</span>
+          <div class="stepper-icon"><svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9M13 17v-3M8 17v-7"/></svg></div>
+          <h2>Data-Driven Insights</h2>
+          <p>See your business clearly with advanced analytics</p>
+          <div class="stepper-description">
+            Beautiful dashboards visualize your financial health. Export comprehensive reports to CSV or Excel for deeper analysis.
+          </div>
+          <div class="stepper-preview">
+            <div class="tour-preview-card">
+              <div class="tour-stat-grid" style="margin-bottom: 10px;">
+                <div class="tour-stat-box" style="background: rgba(16, 185, 129, 0.1);">
+                  <div class="tour-stat-label">Revenue</div>
+                  <div class="tour-stat-value success">$45,600</div>
+                </div>
+                <div class="tour-stat-box" style="background: rgba(239, 68, 68, 0.1);">
+                  <div class="tour-stat-label">Expenses</div>
+                  <div class="tour-stat-value danger">$12,350</div>
+                </div>
+              </div>
+              <div class="tour-stat-box" style="background: rgba(99, 102, 241, 0.1);">
+                <div class="tour-stat-label">Net Profit</div>
+                <div class="tour-stat-value accent" style="font-size: 1.4rem;">$33,250</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 6: Team Management -->
+      <div class="stepper-step" id="step-6">
+        <div class="stepper-content">
+          <span class="stepper-step-badge">6</span>
+          <div class="stepper-icon"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+          <h2>Collaborate with Your Team</h2>
+          <p>Role-based access control made simple</p>
+          <div class="stepper-description">
+            Create team members with custom permissions. Control exactly who can view invoices, manage employees, and access reports.
+          </div>
+          <div class="stepper-preview">
+            <div class="tour-preview-card">
+              <div class="tour-user-row" style="background: rgba(99, 102, 241, 0.1);">
+                <div class="tour-avatar" style="background: var(--accent-primary);">A</div>
+                <div class="tour-user-info">
+                  <div class="tour-user-name">You (Admin)</div>
+                  <div class="tour-user-desc">Full access to all features</div>
+                </div>
+                <span class="tour-badge tour-badge-admin">ADMIN</span>
+              </div>
+              <div class="tour-user-row" style="background: rgba(59, 130, 246, 0.1);">
+                <div class="tour-avatar" style="background: #3b82f6;">J</div>
+                <div class="tour-user-info">
+                  <div class="tour-user-name">John (Accountant)</div>
+                  <div class="tour-user-desc">Invoices & reports only</div>
+                </div>
+                <span class="tour-badge tour-badge-user">USER</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 7: Settings & Customization -->
+      <div class="stepper-step" id="step-7">
+        <div class="stepper-content">
+          <span class="stepper-step-badge">7</span>
+          <div class="stepper-icon"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
+          <h2>Personalize Your Experience</h2>
+          <p>Make it truly yours</p>
+          <div class="stepper-description">
+            Upload your company logo, customize invoice templates, set currency preferences, and configure business information.
+          </div>
+          <div class="stepper-preview">
+            <div class="tour-preview-card">
+              <div class="tour-settings-grid">
+                <div class="tour-settings-item" style="background: rgba(99, 102, 241, 0.1);">
+                  <div class="tour-settings-label">Company Name</div>
+                  <div class="tour-settings-value">Your Business Inc</div>
+                </div>
+                <div class="tour-settings-item" style="background: rgba(139, 92, 246, 0.1);">
+                  <div class="tour-settings-label">Currency</div>
+                  <div class="tour-settings-value">USD ($)</div>
+                </div>
+                <div class="tour-settings-item" style="background: rgba(16, 185, 129, 0.1);">
+                  <div class="tour-settings-label">Tax Rate</div>
+                  <div class="tour-settings-value">15%</div>
+                </div>
+                <div class="tour-settings-item" style="background: rgba(245, 158, 11, 0.1);">
+                  <div class="tour-settings-label">Templates</div>
+                  <div class="tour-settings-value">3 Custom</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 8: Ready to Start -->
+      <div class="stepper-step" id="step-8">
+        <div class="stepper-content">
+          <span class="stepper-step-badge">8</span>
+          <div class="stepper-icon" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(16, 185, 129, 0.1)); border-color: rgba(16, 185, 129, 0.35); color: #10b981;"><svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <h2>Ready to Transform Your Finances</h2>
+          <p>Let's get started!</p>
+          <div class="stepper-description">
+            You now understand the power of NyxoWealth. Start by creating your first invoice, recording a transaction, or inviting your team.
+          </div>
+          <div class="stepper-preview">
+            <div class="tour-protip">
+              <div class="tour-protip-label"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg> Pro Tip</div>
+              <div class="tour-protip-text">Start with your most recent invoice or transaction to get familiar with the interface.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation -->
+      <div class="stepper-nav">
+        <button id="stepper-skip" class="btn btn-secondary">Skip Tour</button>
+        <div class="stepper-nav-buttons">
+          <button id="stepper-prev" class="btn btn-secondary" style="display: none;">Previous</button>
+          <button id="stepper-next" class="btn btn-primary">Next</button>
+        </div>
+      </div>
+
+      <!-- Dot Indicators -->
+      <div class="stepper-dots" id="stepper-dots">
+        <div class="stepper-dot active" data-step="1"></div>
+        <div class="stepper-dot" data-step="2"></div>
+        <div class="stepper-dot" data-step="3"></div>
+        <div class="stepper-dot" data-step="4"></div>
+        <div class="stepper-dot" data-step="5"></div>
+        <div class="stepper-dot" data-step="6"></div>
+        <div class="stepper-dot" data-step="7"></div>
+        <div class="stepper-dot" data-step="8"></div>
+      </div>
+
+      <!-- Progress -->
+      <div class="stepper-progress">
+        <span id="step-counter">Step 1 of 8</span>
+        <div class="progress-bar">
+          <div id="progress-fill" style="width: 12.5%;"></div>
+        </div>
+      </div>
+
+      <!-- Keyboard hints -->
+      <div class="stepper-keyboard-hint">
+        <kbd>&rarr;</kbd> Next &nbsp; <kbd>&larr;</kbd> Back &nbsp; <kbd>Esc</kbd> Skip
+      </div>
+    </div>
+  </div>
 
   <script src="main.js" type="module"></script>
 </body>
